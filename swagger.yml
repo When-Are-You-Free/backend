@@ -56,6 +56,8 @@ paths:
           description: The meetup has been found and deleted.
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found.
     get:
@@ -76,6 +78,8 @@ paths:
                 $ref: '#/components/schemas/Meetup'
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found.
     patch:
@@ -96,6 +100,8 @@ paths:
                 $ref: '#/components/schemas/Meetup'
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found.
 
@@ -107,6 +113,8 @@ paths:
           description: You were part of the meeting and have been removed successfully.
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found or you haven't been part of it.
     patch:
@@ -121,6 +129,8 @@ paths:
           description: Person has been updated successfully.
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found or you haven't been part of it.
     post:
@@ -135,6 +145,8 @@ paths:
           description: Successfully joined the meeting.
         '401':
           description: No authentication token found.
+        '403':
+          description: Token doesn't provide access.
         '404':
           description: The meeting hasn't been found.
 
