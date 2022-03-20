@@ -1,0 +1,206 @@
+openapi: "3.0.3"
+
+info:
+  title: When are you free
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local server for debugging purposes
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /meetup:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                meetup:
+                  $ref: '#/components/schemas/Meetup'
+                person:
+                  $ref: '#/components/schemas/InvitedPerson'
+              required:
+                - meetup
+                - person
+      responses:
+        '201':
+          description: Meetup has successfully been registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meetup'
+        '400':
+          description: Malformed or invalid input.
+        '403':
+          description: No authentication token found.
+        '500':
+          description: Internal server error.
+
+  /meetup/{uuid}:
+    delete:
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID of the meetup to delete.
+      responses:
+        '204':
+          description: The meetup has been found and deleted.
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found.
+    get:
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID of the meetup to get.
+      responses:
+        '200':
+          description: The meetup has been found and returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meetup'
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found.
+    patch:
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: UUID of the meetup to patch.
+      responses:
+        '200':
+          description: The meetup has been updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meetup'
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found.
+
+  /meetup/{uuid}/invited_people:
+    delete:
+      description: Leave a meeting.
+      responses:
+        '204':
+          description: You were part of the meeting and have been removed successfully.
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found or you haven't been part of it.
+    patch:
+      description: Change available dates or names.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitedPerson'
+      responses:
+        '200':
+          description: Person has been updated successfully.
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found or you haven't been part of it.
+    post:
+      description: Join the meeting.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitedPerson'
+      responses:
+        '201':
+          description: Successfully joined the meeting.
+        '403':
+          description: No authentication token found.
+        '404':
+          description: The meeting hasn't been found.
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-User-Token
+
+  schemas:
+    InvitedPerson:
+      type: object
+      properties:
+        name:
+          type: string
+        available_dates:
+          type: array
+          items:
+            type: string
+            format: date
+        preferred_date:
+          description: The date that is the desired final_date of the meetup; This value should also be part of the available_dates.
+          type: string
+          format: date
+
+    Meetup:
+      type: object
+      properties:
+        description:
+          type: string
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        from:
+          description: The earliest possible date for the meetup.
+          type: string
+          format: date
+        to:
+          description: The latest possible date for the meetup.
+          type: string
+          format: date
+          nullable: true
+        invited_people:
+          type: array
+          readOnly: true
+          nullable: true
+          # At least one item, since the person that created the meetup should at least be in there.
+          # If everyone leaves a meeting, it's automatically deleted.
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InvitedPerson'
+        suggested_dates:
+          description: This is the lowest common denominator of all invited persons available dates.
+          type: array
+          readOnly: true
+          nullable: true
+          items:
+            type: string
+            format: date
+        final_date:
+          description: The date everyone has decided one, which is decided by each perseons preferred_date. If no preferred date is set, the available dates are used.
+          type: string
+          format: date
+          nullable: true
+        locked:
+          description: If a decision has been made, the final_date can be locked, to avoid further confusion.
+          type: boolean
