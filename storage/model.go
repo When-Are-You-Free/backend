@@ -56,3 +56,15 @@ type Meetup struct {
 	FinalDate      *Date            `json:"final_date,omitempty"`
 	Locked         bool             `json:"locked"`
 }
+
+// HasAccess checks whether any person has the given token, indicating the user
+// should have access.
+func (m *Meetup) HasAccess(userToken string) bool {
+	for _, person := range m.InvitedPeople {
+		if person.UserToken == userToken {
+			return true
+		}
+	}
+
+	return false
+}

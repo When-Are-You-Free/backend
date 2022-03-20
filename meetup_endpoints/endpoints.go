@@ -68,6 +68,7 @@ func (mh *MeetupHandler) Post(responseWriter http.ResponseWriter, request *http.
 }
 
 func (mh *MeetupHandler) Get(responseWriter http.ResponseWriter, request *http.Request) {
+	userToken := request.Header.Get(auth.UserTokenHeader)
 	uuid := chi.URLParam(request, "uuid")
 	var (
 		meetup   *storage.Meetup
@@ -79,6 +80,11 @@ func (mh *MeetupHandler) Get(responseWriter http.ResponseWriter, request *http.R
 
 	if !contains {
 		httputil.WritePlainError(responseWriter, http.StatusNotFound)
+		return
+	}
+
+	if !meetup.HasAccess(userToken) {
+		httputil.WritePlainError(responseWriter, http.StatusForbidden)
 		return
 	}
 
