@@ -71,11 +71,13 @@ func (mh *MeetupHandler) Get(responseWriter http.ResponseWriter, request *http.R
 	userToken := request.Header.Get(auth.UserTokenHeader)
 	uuid := chi.URLParam(request, "uuid")
 	var (
-		meetup   *storage.Meetup
-		contains bool
+		meetup    *storage.Meetup
+		contains  bool
+		hasAccess bool
 	)
 	mh.s.ReadWrite(func(data *storage.Data) {
 		meetup, contains = data.Meetups[uuid]
+		hasAccess = contains && meetup.HasAccess(userToken)
 	})
 
 	if !contains {
@@ -83,7 +85,7 @@ func (mh *MeetupHandler) Get(responseWriter http.ResponseWriter, request *http.R
 		return
 	}
 
-	if !meetup.HasAccess(userToken) {
+	if !hasAccess {
 		httputil.WritePlainError(responseWriter, http.StatusForbidden)
 		return
 	}
@@ -103,7 +105,34 @@ func (mh *MeetupHandler) Get(responseWriter http.ResponseWriter, request *http.R
 }
 
 func (mh *MeetupHandler) Delete(responseWriter http.ResponseWriter, request *http.Request) {
-	// userToken := request.Header.Get(UserTokenHeader)
+	userToken := request.Header.Get(auth.UserTokenHeader)
+	uuid := chi.URLParam(request, "uuid")
+	var (
+		meetup    *storage.Meetup
+		contains  bool
+		hasAccess bool
+	)
+	mh.s.ReadWrite(func(data *storage.Data) {
+		meetup, contains = data.Meetups[uuid]
+		if contains {
+			hasAccess = meetup.HasAccess(userToken)
+			if hasAccess {
+				delete(data.Meetups, uuid)
+			}
+		}
+	})
+
+	if !contains {
+		responseWriter.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if !hasAccess {
+		httputil.WritePlainError(responseWriter, http.StatusForbidden)
+		return
+	}
+
+	responseWriter.WriteHeader(http.StatusNoContent)
 }
 
 func (mh *MeetupHandler) Patch(responseWriter http.ResponseWriter, request *http.Request) {
